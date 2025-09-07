@@ -6,13 +6,13 @@ def create_app():
 
     @app.get("/")
     def index():
-        message = os.getenv("MESSAGE", "Hello from Dockerized Python! 🚀")
+        message = os.getenv("MESSAGE", "Hello from Dockerized Python by Chepa! 🚀")
         # Return HTML with green message
         return f"""
         <html>
             <head><title>Python Docker App</title></head>
             <body style="font-family: Arial, sans-serif; text-align: center; margin-top: 50px;">
-                <h1 style="color: Green;">{message}</h1>
+                <h1 style="color: Blue;">{message}</h1>
             </body>
         </html>
         """
