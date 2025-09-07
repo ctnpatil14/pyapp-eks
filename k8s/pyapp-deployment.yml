@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: pyapp
-          image: chtnpatil14/pyapps:29
+          image: chtnpatil14/pyapps:30
           ports:
             - containerPort: 8000
