@@ -1,30 +1,40 @@
-pipeline{
+pipeline {
     agent any
-    stages{
-        stage("Docker Image"){
-            steps{
-                sh "docker build -t chtnpatil14/pyapp:${env.BUILD_NUMBER} ."
+    stages {
+        stage("Git checkout") {
+            steps {
+                git url: "https://github.com/ctnpatil14/pyapp-eks.git", branch: "main"
             }
         }
-        stage("Pust To Docker Hub"){
-            steps{
+        stage ("Docker build") {
+            steps {
+                sh "docker build -t chtnpatil14/pyapps:${env.BUILD_NUMBER} ."
+            }
+        }
+        stage ("Push to Docker hub") {
+            steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'pwd', usernameVariable: 'usr')]) {
                     sh "docker login -u ${usr} -p ${pwd}"
-                    sh "docker push chtnpatil14/pyapp:${env.BUILD_NUMBER}"
+                    sh "docker push chtnpatil14/pyapps:${env.BUILD_NUMBER}"
                 }
             }
         }
-        stage("Update Tag in Deployment YAML and push"){
-            steps{
-                withCredentials([gitUsernamePassword(credentialsId: 'github-creds', gitToolName: 'Default')]) {
+        stage("Update dyanmic image Values")
+        {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'github-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
                     sh """
-                     git config user.name "Jenkins Server"
-                     git config user.email "jenkins@automation.com"
-                     yq e '.spec.template.spec.containers[0].image = "chtnpatil14/pyapp:${env.BUILD_NUMBER}"' -i ./k8s/pyapp-deployment.yml
-                     git add .
-                     git commit -m 'Docker tag updated by jenkins'
-                     git push origin main
-                 """
+        git config user.name "${GIT_USER}"
+        git config user.email "${GIT_USER}@users.noreply.github.com"
+        git remote set-url origin https://${GIT_USER}:${GIT_TOKEN}@github.com/ctnpatil14/pyapp-eks.git
+        # Update image tag using sed
+        sed -i 's|image: chtnpatil14/pyapps:.*|image: chtnpatil14/pyapps:${BUILD_ID}|' k8s/pyapp-deployment.yml
+        git add k8s/pyapp-deployment.yml
+        git commit -m "Update image tag to ${BUILD_ID}"
+        # Use token-only remote URL
+        git remote set-url origin https://${GIT_TOKEN}@github.com/ctnpatil14/pyapp-eks.git
+        git push origin main
+        """
                 }
             }
         }
